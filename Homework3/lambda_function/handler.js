@@ -4,19 +4,28 @@ const connect_to_db = require('./db');
 
 const talk = require('./Talk');
 
-module.exports.watch_next_by_idx = (event, context, callback) => {
+function parse(arr) {
+    var out =  new Array(arr.length)
+    for(var i = 0; i <  arr.length; i++) {
+        arr[i] = arr[i].substring(arr[i].indexOf(','))
+        out[i] = arr[i].substring(1, arr[i].indexOf(']'))
+    }
+    return out
+}
+
+module.exports.get_next = (event, context, callback) => {
     context.callbackWaitsForEmptyEventLoop = false;
     console.log('Received event:', JSON.stringify(event, null, 2));
     let body = {}
     if (event.body) {
         body = JSON.parse(event.body)
     }
-    //idx is field of request that is send
+    // set default
     if(!body.idx) {
         callback(null, {
-                    statusCode: 500,
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: 'Could not fetch the talks. Tag is null.'
+            statusCode: 500,
+            headers: { 'Content-Type': 'text/plain' },
+            body: 'Could not fetch the talks. idx is null.'
         })
     }
     
@@ -27,14 +36,17 @@ module.exports.watch_next_by_idx = (event, context, callback) => {
         body.page = 1
     }
     
-    //find in tedz_data collection id passed as argument in request
+
+    
     connect_to_db().then(() => {
-        console.log('=> get_all_watch_next_by_idx');
-        talk.find({_id : body.idx})
+        console.log('=> get_all talks');
+        talk.findById(body.idx)
+            .skip((body.doc_per_page * body.page) - body.doc_per_page)
+            .limit(body.doc_per_page)
             .then(talks => {
                     callback(null, {
                         statusCode: 200,
-                        body: JSON.stringify(talks)
+                        body: JSON.stringify(parse(talks.next))
                     })
                 }
             )

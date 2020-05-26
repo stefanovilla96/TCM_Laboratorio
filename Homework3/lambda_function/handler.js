@@ -11,7 +11,7 @@ module.exports.watch_next_by_idx = (event, context, callback) => {
     if (event.body) {
         body = JSON.parse(event.body)
     }
-    // set default
+    //idx is field of request that is send
     if(!body.idx) {
         callback(null, {
                     statusCode: 500,
@@ -27,6 +27,7 @@ module.exports.watch_next_by_idx = (event, context, callback) => {
         body.page = 1
     }
     
+    //find in tedz_data collection id passed as argument in request
     connect_to_db().then(() => {
         console.log('=> get_all_watch_next_by_idx');
         talk.find({_id : body.idx})
